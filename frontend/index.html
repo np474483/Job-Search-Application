@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Finder - Your Gateway to Opportunities</title>
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="logo">
+          <img src="#" alt="" />
+          <span>Job Finder</span>
+        </div>
+        <ul class="nav-links">
+          <li><a href="#" class="active">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="hero">
+      <div class="hero-content">
+        <h2>Job Finder</h2>
+        <h1>Find The Perfect Job That You Deserved!</h1>
+        <p>Find Your Career To Make A Better Life.</p>
+        <div class="cta-buttons">
+          <a href="SignIn.html"><button class="btn primary">Login</button></a>
+          <a href="CreateAccount.html"
+            ><button class="btn secondary">Create Account</button></a
+          >
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="images/home.jpg" />
+      </div>
+    </main>
+
+    <div class="Recent-post">
+      <section class="jobs-section">
+        <div class="section-header">
+          <h2>Recent Jobs Available</h2>
+          <a href="#" class="view-all">View all</a>
+        </div>
+        <!-- Job Listings -->
+        <div class="job-listings">
+          <!-- Job 1 -->
+          <div class="job-card">
+            <div class="job-header">
+              <div class="job-info">
+                <div class="company-logo green">N</div>
+                <div class="job-details">
+                  <span class="job-time">10 min ago</span>
+                  <h3 class="job-title green-text">Senior Product designer</h3>
+                  <p class="company-name">Infotech</p>
+                </div>
+              </div>
+              <button class="bookmark-btn" data-job-id="job1">
+                <i class="far fa-bookmark"></i>
+              </button>
+            </div>
+
+            <div class="job-meta">
+              <div class="meta-item">
+                <i class="fas fa-briefcase"></i>
+                <span>Design</span>
+              </div>
+              <div class="meta-item">
+                <i class="fas fa-clock"></i>
+                <span>Full-time</span>
+              </div>
+              <div class="meta-item">
+                <i class="fas fa-dollar-sign"></i>
+                <span>40000-45000</span>
+              </div>
+              <div class="meta-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Pune, Maharashtra</span>
+              </div>
+            </div>
+
+            <div class="job-actions">
+              <button class="details-btn">Job Details</button>
+            </div>
+          </div>
+
+          <!-- Job 2 -->
+          <div class="job-card">
+            <div class="job-header">
+              <div class="job-info">
+                <div class="company-logo orange">O</div>
+                <div class="job-details">
+                  <span class="job-time">10 min ago</span>
+                  <h3 class="job-title orange-text">Full Stack Developer</h3>
+                  <p class="company-name">TCS</p>
+                </div>
+              </div>
+              <button class="bookmark-btn" data-job-id="job2">
+                <i class="far fa-bookmark"></i>
+              </button>
+            </div>
+
+            <div class="job-meta">
+              <div class="meta-item">
+                <i class="fas fa-briefcase"></i>
+                <span>Engineering</span>
+              </div>
+              <div class="meta-item">
+                <i class="fas fa-clock"></i>
+                <span>Part-time</span>
+              </div>
+              <div class="meta-item">
+                <i class="fas fa-dollar-sign"></i>
+                <span>28000-32000</span>
+              </div>
+              <div class="meta-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Pune, Maharashtra</span>
+              </div>
+            </div>
+
+            <div class="job-actions">
+              <button class="details-btn">Job Details</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

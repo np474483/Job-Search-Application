@@ -1,0 +1,87 @@
+.contact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 8px;
+  height: 100vh;
+}
+
+.contact-content {
+  flex: 1;
+  margin-right: 10rem;
+  margin-left: 5%;
+  text-align: left;
+  max-width: 400px;
+}
+
+.contact-image {
+  flex: 1;
+  margin-right: 5rem;
+}
+
+.contact-content h1 {
+  color: #0539a8;
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 2rem;
+}
+
+.contact-content label {
+  margin-bottom: 0.5rem;
+}
+
+.contact-content input {
+  margin-bottom: 1rem;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.contact-content select {
+  margin-bottom: 1rem; /* Ensure spacing below the drop-down */
+  padding: 10px; /* Match padding with input fields */
+  border: 1px solid #ccc; /* Match border with input fields */
+  border-radius: 5px; /* Match border radius with input fields */
+  width: 100%; /* Ensure it takes full width */
+}
+
+.btn.primary {
+  margin-top: 2rem; /* Increase space above the button */
+}
+
+
+.btn.primary {
+  background-color: #0539a8;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 1rem;
+}
+
+.btn.primary:hover {
+  background-color: #042a6d;
+}
+
+.account-image {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .contact {
+    flex-direction: column; /* Stack elements on smaller screens */
+    align-items: center; /* Center align items */
+  }
+
+  .contact-content {
+    margin-right: 0; /* Remove margin on smaller screens */
+    margin-bottom: 2rem; /* Add space below */
+  }
+}

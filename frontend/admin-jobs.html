@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Jobs - Job Finder Admin</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="admin-dashboard.css" />
+    <script src="admin-jobs.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="logo">
+          <img src="#" alt="" />
+          <span>Job Finder Admin</span>
+        </div>
+        <ul class="nav-links">
+          <li><a href="admin-dashboard.html">Dashboard</a></li>
+          <li><a href="admin-users.html">Manage Users</a></li>
+          <li><a href="admin-jobs.html" class="active">Manage Jobs</a></li>
+          <li><a href="index.html">Log Out</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="dashboard-container">
+      <h1>Manage Jobs</h1>
+      <p class="welcome-text">
+        View and manage all job listings in the system.
+      </p>
+
+      <div class="filter-container">
+        <div class="search-box">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search by title or company..." />
+          <button onclick="searchJobs()">Search</button>
+        </div>
+
+        <div class="filter-options">
+          <select id="statusFilter" onchange="filterJobs()">
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="closed">Closed</option>
+          </select>
+
+          <select id="categoryFilter" onchange="filterJobs()">
+            <option value="all">All Categories</option>
+            <option value="design">Design</option>
+            <option value="engineering">Engineering</option>
+            <option value="marketing">Marketing</option>
+            <option value="sales">Sales</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="dashboard-section">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Company</th>
+                <th>Location</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Posted Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="jobsTableBody">
+              <!-- Job data will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

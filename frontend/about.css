@@ -1,0 +1,41 @@
+.about {
+  display: flex;
+  align-items: center;
+  padding: 2rem;
+}
+
+.about-image {
+  flex: 1;
+  margin-right: 2rem;
+}
+
+.about-image img {
+  max-width: 150%;
+  height: auto;
+}
+
+.about-content {
+  flex: 2;
+}
+
+.about-content h1 {
+  color: #0539a8;
+  margin-bottom: 1rem;
+  margin-left: 20%;
+}
+
+.about-content h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  margin-left: 20%;
+}
+
+.about-content p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+  margin-left: 20%;
+}
+
+.about-content ul {
+  margin-left: 20%;
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Listings - Job Finder</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="js-job-listing.css">
+  <script src="js-job-listing.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <div class="logo">
+        <img src="#" alt="">
+        <span>Job Finder</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="job-seeker-dashboard.html">Dashboard</a></li>
+        <li><a href="js-profile.html">My Profile</a></li>
+        <li><a href="js-job-listing.html" class="active">Job Listing</a></li>
+        <li><a href="js-saved-jobs.html">Saved Jobs</a></li>
+        <li><a href="js-applied-jobs.html">Applied Jobs</a></li>
+        <li><a href="index.html">Log Out</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>Job Listings</h1>
+    <p class="page-description">Find the perfect job opportunity for you</p>
+    
+    <div class="filter-container">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Job title or keyword">
+        <button onclick="searchJobs()">Search</button>
+      </div>
+      
+      <div class="filters">
+        <select id="locationFilter" onchange="filterJobs()">
+          <option value="all">All Locations</option>
+          <option value="pune">Pune</option>
+          <option value="mumbai">Mumbai</option>
+          <option value="bangalore">Bangalore</option>
+          <option value="delhi">Delhi</option>
+        </select>
+        
+        <select id="jobTypeFilter" onchange="filterJobs()">
+          <option value="all">All Job Types</option>
+          <option value="full-time">Full-time</option>
+          <option value="part-time">Part-time</option>
+          <option value="contract">Contract</option>
+          <option value="internship">Internship</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="job-list">
+      <div class="job-card" data-location="pune" data-type="full-time">
+        <h3>Senior Web Developer</h3>
+        <p class="company-name">TechCorp Inc.</p>
+        <p class="job-location">Pune, Maharashtra</p>
+        <p class="job-type">Full-time</p>
+        <p class="job-salary">₹40,000 - ₹60,000 per month</p>
+        <p class="job-description">We are looking for an experienced web developer proficient in HTML, CSS, JavaScript, and modern frameworks.</p>
+        <div class="job-actions">
+          <button class="save-btn" onclick="saveJob(1, this)">Save Job</button>
+          <button class="apply-btn" onclick="applyForJob(1)">Apply Now</button>
+        </div>
+      </div>
+      
+      <div class="job-card" data-location="mumbai" data-type="part-time">
+        <h3>UI/UX Designer</h3>
+        <p class="company-name">Creative Solutions</p>
+        <p class="job-location">Mumbai, Maharashtra</p>
+        <p class="job-type">Part-time</p>
+        <p class="job-salary">₹30,000 - ₹45,000 per month</p>
+        <p class="job-description">Looking for a talented UI/UX designer to create beautiful and functional user interfaces for our products.</p>
+        <div class="job-actions">
+          <button class="save-btn" onclick="saveJob(2, this)">Save Job</button>
+          <button class="apply-btn" onclick="applyForJob(2)">Apply Now</button>
+        </div>
+      </div>
+      
+      <div class="job-card" data-location="bangalore" data-type="full-time">
+        <h3>Marketing Specialist</h3>
+        <p class="company-name">Global Marketing</p>
+        <p class="job-location">Bangalore, Karnataka</p>
+        <p class="job-type">Full-time</p>
+        <p class="job-salary">₹35,000 - ₹50,000 per month</p>
+        <p class="job-description">Join our marketing team to develop and implement marketing strategies for our clients.</p>
+        <div class="job-actions">
+          <button class="save-btn" onclick="saveJob(3, this)">Save Job</button>
+          <button class="apply-btn" onclick="applyForJob(3)">Apply Now</button>
+        </div>
+      </div>
+      
+      <div class="job-card" data-location="delhi" data-type="internship">
+        <h3>Software Development Intern</h3>
+        <p class="company-name">Tech Innovators</p>
+        <p class="job-location">Delhi, Delhi</p>
+        <p class="job-type">Internship</p>
+        <p class="job-salary">₹15,000 - ₹20,000 per month</p>
+        <p class="job-description">Great opportunity for students to gain practical experience in software development and engineering.</p>
+        <div class="job-actions">
+          <button class="save-btn" onclick="saveJob(4, this)">Save Job</button>
+          <button class="apply-btn" onclick="applyForJob(4)">Apply Now</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+
