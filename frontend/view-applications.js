@@ -1,276 +1,258 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Check if we're viewing applications for a specific job
-  const urlParams = new URLSearchParams(window.location.search)
-  const jobId = urlParams.get("job")
+  const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+  if (!userInfo || userInfo.userType !== "recruiter") {
+    window.location.href = "SignIn.html";
+    return;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const jobId = urlParams.get("job");
 
   if (jobId) {
-    // Update page title and subtitle based on the job
-    const jobTitles = {
-      1: "Senior Product Designer",
-      2: "Full Stack Developer",
-      3: "Marketing Manager",
-      4: "Customer Support Specialist",
+    fetchApplicationsForJob(jobId);
+  } else {
+    fetchAllApplications(userInfo.userId);
+  }
+
+  const jobFilter = document.getElementById("jobFilter");
+  const statusFilter = document.getElementById("statusFilter");
+
+  if (jobFilter) jobFilter.addEventListener("change", filterApplications);
+  if (statusFilter) statusFilter.addEventListener("change", filterApplications);
+});
+
+async function fetchApplicationsForJob(jobId) {
+  try {
+    const jobResponse = await fetch(
+      `http://localhost:3000/api/recruiters/jobs/${jobId}`
+    );
+
+    if (!jobResponse.ok) {
+      throw new Error("Failed to fetch job details");
     }
 
-    if (jobTitles[jobId]) {
-      document.getElementById("page-title").textContent = `Applications for ${jobTitles[jobId]}`
-      document.getElementById("page-subtitle").textContent =
-        `Review and manage applications for the ${jobTitles[jobId]} position`
+    const job = await jobResponse.json();
 
-      // Set the job filter to the current job
-      document.getElementById("jobFilter").value = jobId
-
-      // Filter applications to show only those for this job
-      filterApplications()
+    const pageTitle = document.querySelector("h1");
+    if (pageTitle) {
+      pageTitle.textContent = `Applications for ${job.title}`;
     }
+
+    const applicationsResponse = await fetch(
+      `http://localhost:3000/api/recruiters/applications/job/${jobId}`
+    );
+
+    if (!applicationsResponse.ok) {
+      throw new Error("Failed to fetch applications");
+    }
+
+    const applications = await applicationsResponse.json();
+    displayApplications(applications, job);
+  } catch (error) {
+    console.error("Error fetching applications:", error);
+    document.querySelector(".applications-container").innerHTML = `
+      <div style="text-align: center; padding: 20px;">
+        <p>Failed to load applications. Please try again later.</p>
+      </div>
+    `;
   }
-
-  // Handle status buttons
-  const statusButtons = document.querySelectorAll(".status-btn")
-
-  statusButtons.forEach((button) => {
-    button.addEventListener("click", function () {
-      const card = this.closest(".application-card")
-      const status = this.getAttribute("data-status")
-
-      // Remove active class from all status buttons in this card
-      card.querySelectorAll(".status-btn").forEach((btn) => {
-        btn.classList.remove("active")
-      })
-
-      // Add active class to clicked button
-      this.classList.add("active")
-
-      // Update the status badge
-      const statusBadge = card.querySelector(".status-badge")
-      statusBadge.className = `status-badge ${status}`
-      statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1)
-
-      // Update the card's data-status attribute
-      card.setAttribute("data-status", status)
-
-      // Show notification
-      showNotification(`Application status updated to ${status}`)
-    })
-  })
-
-  // Handle notes toggle
-  const notesToggleButtons = document.querySelectorAll(".notes-toggle")
-
-  notesToggleButtons.forEach((button) => {
-    button.addEventListener("click", function () {
-      const notesContainer = this.nextElementSibling
-
-      if (notesContainer.style.display === "none") {
-        notesContainer.style.display = "flex"
-        this.innerHTML = '<i class="fas fa-sticky-note"></i> Hide Notes'
-      } else {
-        notesContainer.style.display = "none"
-
-        // Check if there's text in the textarea to determine the button text
-        const textarea = notesContainer.querySelector("textarea")
-        if (textarea.value.trim()) {
-          this.innerHTML = '<i class="fas fa-sticky-note"></i> View Notes'
-        } else {
-          this.innerHTML = '<i class="fas fa-sticky-note"></i> Add Notes'
-        }
-      }
-    })
-  })
-
-  // Handle save notes buttons
-  const saveNotesButtons = document.querySelectorAll(".save-notes")
-
-  saveNotesButtons.forEach((button) => {
-    button.addEventListener("click", function () {
-      const notesContainer = this.closest(".notes-container")
-      const textarea = notesContainer.querySelector("textarea")
-      const notesToggle = notesContainer.previousElementSibling
-
-      // Here you would typically save the notes to your backend
-      console.log("Saving notes:", textarea.value)
-
-      // Hide the notes container
-      notesContainer.style.display = "none"
-
-      // Update the toggle button text
-      if (textarea.value.trim()) {
-        notesToggle.innerHTML = '<i class="fas fa-sticky-note"></i> View Notes'
-        showNotification("Notes saved successfully!")
-      } else {
-        notesToggle.innerHTML = '<i class="fas fa-sticky-note"></i> Add Notes'
-        showNotification("Notes cleared")
-      }
-    })
-  })
-
-  // Handle search and filters
-  const searchInput = document.getElementById("searchApplications")
-  const jobFilter = document.getElementById("jobFilter")
-  const statusFilter = document.getElementById("statusFilter")
-  const clearFiltersButton = document.getElementById("clearFilters")
-
-  searchInput.addEventListener("input", filterApplications)
-  jobFilter.addEventListener("change", filterApplications)
-  statusFilter.addEventListener("change", filterApplications)
-
-  clearFiltersButton.addEventListener("click", () => {
-    searchInput.value = ""
-    jobFilter.value = "all"
-    statusFilter.value = "all"
-
-    // Reset all application cards to visible
-    const applicationCards = document.querySelectorAll(".application-card")
-    applicationCards.forEach((card) => {
-      card.style.display = ""
-    })
-
-    // Update application count
-    updateApplicationCount()
-  })
-
-  // Function to filter applications based on search and filter criteria
-  function filterApplications() {
-    const searchTerm = searchInput.value.toLowerCase()
-    const jobValue = jobFilter.value
-    const statusValue = statusFilter.value
-
-    const applicationCards = document.querySelectorAll(".application-card")
-
-    applicationCards.forEach((card) => {
-      const applicantName = card.querySelector(".applicant-details h3").textContent.toLowerCase()
-      const applicantEmail = card.querySelector(".applicant-details p").textContent.toLowerCase()
-      const cardJobId = card.getAttribute("data-job-id")
-      const cardStatus = card.getAttribute("data-status")
-
-      // Check if card matches all filter criteria
-      const matchesSearch = applicantName.includes(searchTerm) || applicantEmail.includes(searchTerm)
-      const matchesJob = jobValue === "all" || cardJobId === jobValue
-      const matchesStatus = statusValue === "all" || cardStatus === statusValue
-
-      // Show/hide card based on filter matches
-      if (matchesSearch && matchesJob && matchesStatus) {
-        card.style.display = ""
-      } else {
-        card.style.display = "none"
-      }
-    })
-
-    // Update application count
-    updateApplicationCount()
-  }
-
-  // Function to update the application count based on visible cards
-  function updateApplicationCount() {
-    const visibleCards = document.querySelectorAll('.application-card[style=""]').length
-    document.getElementById("applicationsCount").textContent = visibleCards
-  }
-
-  // Function to show notifications
-  function showNotification(message, type = "success") {
-    // Create notification element
-    const notification = document.createElement("div")
-    notification.className = `notification ${type}`
-    notification.textContent = message
-
-    // Add to body
-    document.body.appendChild(notification)
-
-    // Show notification
-    setTimeout(() => {
-      notification.classList.add("show")
-    }, 10)
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-      notification.classList.remove("show")
-      setTimeout(() => {
-        notification.remove()
-      }, 300)
-    }, 3000)
-  }
-
-  // Add CSS for notifications
-  const style = document.createElement("style")
-  style.textContent = `
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 4px;
-            color: white;
-            font-size: 14px;
-            z-index: 1000;
-            transform: translateY(-20px);
-            opacity: 0;
-            transition: transform 0.3s, opacity 0.3s;
-        }
-        
-        .notification.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        .notification.success {
-            background-color: #10b981;
-        }
-        
-        .notification.error {
-            background-color: #ef4444;
-        }
-    `
-  document.head.appendChild(style)
-
-  // Initialize filters if a job ID is specified
-  if (jobId) {
-    filterApplications()
-  }
-})
-
-// Simple JavaScript for the view applications page
-function viewResume() {
-  alert("Opening resume... (In a real application, this would open the applicant's resume)")
 }
 
-function updateStatus(button, status) {
-  const card = button.closest(".application-card")
-  const statusSpan = card.querySelector(".status")
+async function fetchAllApplications(recruiterId) {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/recruiters/applications/${recruiterId}`
+    );
 
-  // Update the status display
-  statusSpan.className = "status " + status
-  statusSpan.textContent = status.charAt(0).toUpperCase() + status.slice(1)
-
-  // Update the data attribute for filtering
-  card.setAttribute("data-status", status)
-
-  // Disable the clicked button and enable others
-  const buttons = card.querySelectorAll(".action-btn")
-  buttons.forEach((btn) => {
-    if (btn.classList.contains(status)) {
-      btn.disabled = true
-    } else if (btn.classList.contains("shortlist") || btn.classList.contains("reject")) {
-      btn.disabled = false
+    if (!response.ok) {
+      throw new Error("Failed to fetch applications");
     }
-  })
 
-  alert(`Applicant status updated to ${status}`)
+    const applications = await response.json();
+
+    const jobsResponse = await fetch(
+      `http://localhost:3000/api/recruiters/jobs/${recruiterId}`
+    );
+
+    if (!jobsResponse.ok) {
+      throw new Error("Failed to fetch jobs");
+    }
+
+    const jobs = await jobsResponse.json();
+
+    populateJobFilter(jobs);
+
+    displayApplications(applications);
+  } catch (error) {
+    console.error("Error fetching applications:", error);
+    document.querySelector(".applications-container").innerHTML = `
+      <div style="text-align: center; padding: 20px;">
+        <p>Failed to load applications. Please try again later.</p>
+      </div>
+    `;
+  }
+}
+
+function populateJobFilter(jobs) {
+  const jobFilter = document.getElementById("jobFilter");
+
+  if (!jobFilter) return;
+
+  while (jobFilter.options.length > 1) {
+    jobFilter.remove(1);
+  }
+
+  jobs.forEach((job) => {
+    const option = document.createElement("option");
+    option.value = job._id;
+    option.textContent = job.title;
+    jobFilter.appendChild(option);
+  });
+}
+
+function displayApplications(applications, job = null) {
+  const container = document.querySelector(".applications-container");
+
+  if (applications.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 20px;">
+        <p>No applications found${job ? ` for ${job.title}` : ""}.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = "";
+
+  applications.forEach((application) => {
+    const appliedDate = new Date(application.appliedDate).toLocaleDateString();
+
+    const jobTitle = job
+      ? job.title
+      : application.jobId
+      ? application.jobId.title
+      : "Unknown Job";
+
+    const applicant = application.jobSeekerId || {};
+    const applicantName =
+      `${applicant.firstName || ""} ${applicant.lastName || ""}`.trim() ||
+      "Unknown Applicant";
+
+    const card = document.createElement("div");
+    card.className = "application-card";
+    card.setAttribute(
+      "data-job",
+      job ? job._id : application.jobId ? application.jobId._id : ""
+    );
+    card.setAttribute("data-status", application.status);
+
+    card.innerHTML = `
+      <div class="applicant-info">
+        <h3>${applicantName}</h3>
+        <p class="applicant-email">${applicant.email || "No email provided"}</p>
+        <p class="applicant-phone">${applicant.phone || "No phone provided"}</p>
+      </div>
+      <div class="application-details">
+        <p class="job-applied">Applied for: <strong>${jobTitle}</strong></p>
+        <p class="application-date">Applied on: ${appliedDate}</p>
+        <p class="application-status">Status: <span class="status ${
+          application.status
+        }">${formatStatus(application.status)}</span></p>
+      </div>
+      <div class="application-actions">
+        <button class="action-btn view" onclick="viewResume('${
+          application._id
+        }')">View Resume</button>
+        <button class="action-btn shortlist" onclick="updateStatus('${
+          application._id
+        }', 'shortlisted', this)" ${
+      application.status === "shortlisted" ? "disabled" : ""
+    }>Shortlist</button>
+        <button class="action-btn reject" onclick="updateStatus('${
+          application._id
+        }', 'rejected', this)" ${
+      application.status === "rejected" ? "disabled" : ""
+    }>Reject</button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function formatStatus(status) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 function filterApplications() {
-  const jobFilter = document.getElementById("jobFilter").value
-  const statusFilter = document.getElementById("statusFilter").value
-  const cards = document.querySelectorAll(".application-card")
+  const jobFilter = document.getElementById("jobFilter");
+  const statusFilter = document.getElementById("statusFilter");
+
+  const jobValue = jobFilter ? jobFilter.value : "all";
+  const statusValue = statusFilter ? statusFilter.value : "all";
+
+  const cards = document.querySelectorAll(".application-card");
 
   cards.forEach((card) => {
-    const jobMatch = jobFilter === "all" || card.getAttribute("data-job") === jobFilter
-    const statusMatch = statusFilter === "all" || card.getAttribute("data-status") === statusFilter
+    const jobMatch =
+      jobValue === "all" || card.getAttribute("data-job") === jobValue;
+    const statusMatch =
+      statusValue === "all" || card.getAttribute("data-status") === statusValue;
 
     if (jobMatch && statusMatch) {
-      card.style.display = ""
+      card.style.display = "";
     } else {
-      card.style.display = "none"
+      card.style.display = "none";
     }
-  })
+  });
 }
 
+function viewResume(applicationId) {
+  alert(
+    "Viewing resume... (In a real application, this would open the applicant's resume file)"
+  );
+}
+
+async function updateStatus(applicationId, status, button) {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/recruiters/applications/${applicationId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update status");
+    }
+
+    const card = button.closest(".application-card");
+    const statusSpan = card.querySelector(".status");
+
+    statusSpan.className = `status ${status}`;
+    statusSpan.textContent = formatStatus(status);
+
+    card.setAttribute("data-status", status);
+
+    const buttons = card.querySelectorAll(".action-btn");
+    buttons.forEach((btn) => {
+      if (btn.classList.contains(status)) {
+        btn.disabled = true;
+      } else if (
+        btn.classList.contains("shortlist") ||
+        btn.classList.contains("reject")
+      ) {
+        btn.disabled = false;
+      }
+    });
+
+    alert(`Application status updated to ${formatStatus(status)}`);
+  } catch (error) {
+    console.error("Error updating status:", error);
+    alert("Failed to update application status");
+  }
+}

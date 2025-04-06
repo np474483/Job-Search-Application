@@ -1,180 +1,143 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Handle delete job buttons
-  const deleteButtons = document.querySelectorAll(".delete-job")
-
-  deleteButtons.forEach((button) => {
-    button.addEventListener("click", function () {
-      const jobId = this.getAttribute("data-job-id")
-
-      if (confirm("Are you sure you want to delete this job posting? This action cannot be undone.")) {
-        // Here you would typically make an API call to delete the job
-        console.log(`Deleting job with ID: ${jobId}`)
-
-        // For demo purposes, we'll just remove the job row from the table
-        const jobRow = this.closest("tr")
-        jobRow.style.opacity = "0"
-        setTimeout(() => {
-          jobRow.remove()
-
-          // Update the job count
-          const jobCountElement = document.getElementById("jobCount")
-          const currentCount = Number.parseInt(jobCountElement.textContent)
-          jobCountElement.textContent = currentCount - 1
-
-          showNotification("Job posting deleted successfully!")
-        }, 300)
-      }
-    })
-  })
-
-  // Handle search functionality
-  const searchInput = document.getElementById("searchJobs")
-  searchInput.addEventListener("input", filterJobs)
-
-  // Handle filter dropdowns
-  const statusFilter = document.getElementById("statusFilter")
-  const categoryFilter = document.getElementById("categoryFilter")
-
-  statusFilter.addEventListener("change", filterJobs)
-  categoryFilter.addEventListener("change", filterJobs)
-
-  // Handle clear filters button
-  const clearFiltersButton = document.getElementById("clearFilters")
-  clearFiltersButton.addEventListener("click", () => {
-    searchInput.value = ""
-    statusFilter.value = "all"
-    categoryFilter.value = "all"
-
-    // Reset all table rows to visible
-    const tableRows = document.querySelectorAll("#jobsTableBody tr")
-    tableRows.forEach((row) => {
-      row.style.display = ""
-    })
-
-    // Update job count
-    updateJobCount()
-  })
-
-  // Function to filter jobs based on search and filter criteria
-  function filterJobs() {
-    const searchTerm = searchInput.value.toLowerCase()
-    const statusValue = statusFilter.value
-    const categoryValue = categoryFilter.value
-
-    const tableRows = document.querySelectorAll("#jobsTableBody tr")
-
-    tableRows.forEach((row) => {
-      const jobTitle = row.querySelector(".job-title").textContent.toLowerCase()
-      const jobLocation = row.querySelector("td:nth-child(3)").textContent.toLowerCase()
-      const jobCategory = row.querySelector("td:nth-child(2)").textContent.toLowerCase()
-      const jobStatus = row.querySelector(".status-badge").classList.contains(statusValue)
-
-      // Check if row matches all filter criteria
-      const matchesSearch = jobTitle.includes(searchTerm) || jobLocation.includes(searchTerm)
-      const matchesStatus = statusValue === "all" || row.querySelector(".status-badge").classList.contains(statusValue)
-      const matchesCategory = categoryValue === "all" || jobCategory.includes(categoryValue.replace("_", " "))
-
-      // Show/hide row based on filter matches
-      if (matchesSearch && matchesStatus && matchesCategory) {
-        row.style.display = ""
-      } else {
-        row.style.display = "none"
-      }
-    })
-
-    // Update job count
-    updateJobCount()
+  const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+  if (!userInfo || userInfo.userType !== "recruiter") {
+    window.location.href = "SignIn.html";
+    return;
   }
 
-  // Function to update the job count based on visible rows
-  function updateJobCount() {
-    const visibleRows = document.querySelectorAll('#jobsTableBody tr[style=""]').length
-    document.getElementById("jobCount").textContent = visibleRows
+  fetchJobs(userInfo.userId);
+
+  const searchInput = document.getElementById("searchInput");
+  searchInput.addEventListener("input", filterJobs);
+});
+
+async function fetchJobs(recruiterId) {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/recruiters/jobs/${recruiterId}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch jobs");
+    }
+
+    const jobs = await response.json();
+    displayJobs(jobs);
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    document.querySelector(".jobs-container").innerHTML = `
+      <div style="text-align: center; padding: 20px;">
+        <p>Failed to load jobs. Please try again later.</p>
+      </div>
+    `;
+  }
+}
+
+function displayJobs(jobs) {
+  const jobsContainer = document.querySelector(".jobs-container");
+
+  if (jobs.length === 0) {
+    jobsContainer.innerHTML = `
+      <div style="text-align: center; padding: 20px;">
+        <p>You haven't posted any jobs yet.</p>
+        <a href="post-job.html" class="action-btn">Post Your First Job</a>
+      </div>
+    `;
+    return;
   }
 
-  // Function to show notifications
-  function showNotification(message, type = "success") {
-    // Create notification element
-    const notification = document.createElement("div")
-    notification.className = `notification ${type}`
-    notification.textContent = message
+  jobsContainer.innerHTML = "";
 
-    // Add to body
-    document.body.appendChild(notification)
+  jobs.forEach((job) => {
+    const postedDate = new Date(job.postedDate).toLocaleDateString();
 
-    // Show notification
-    setTimeout(() => {
-      notification.classList.add("show")
-    }, 10)
+    const jobItem = document.createElement("div");
+    jobItem.className = "job-item";
+    jobItem.setAttribute("data-title", job.title.toLowerCase());
+    jobItem.setAttribute("data-company", job.company.toLowerCase());
+    jobItem.setAttribute("data-location", job.location.toLowerCase());
 
-    // Remove after 3 seconds
-    setTimeout(() => {
-      notification.classList.remove("show")
-      setTimeout(() => {
-        notification.remove()
-      }, 300)
-    }, 3000)
-  }
+    jobItem.innerHTML = `
+      <div class="job-info">
+        <h3>${job.title}</h3>
+        <p class="job-details">${formatJobType(job.jobType)} • ${
+      job.location
+    }</p>
+        <p class="job-date">Posted on: ${postedDate}</p>
+      </div>
+      <div class="job-status">
+        <span class="status ${job.status}">${formatStatus(job.status)}</span>
+        <p>${job.applications ? job.applications : 0} Applications</p>
+      </div>
+      <div class="job-actions">
+        <a href="view-applications.html?job=${
+          job._id
+        }" class="action-btn view">View Applications</a>
+        <a href="job-details.html?id=${
+          job._id
+        }" class="action-btn view">View Details</a>
+        <a href="post-job.html?edit=${job._id}" class="action-btn edit">Edit</a>
+        <button class="action-btn delete" onclick="confirmDelete('${
+          job._id
+        }')">Delete</button>
+      </div>
+    `;
 
-  // Add CSS for notifications
-  const style = document.createElement("style")
-  style.textContent = `
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 4px;
-            color: white;
-            font-size: 14px;
-            z-index: 1000;
-            transform: translateY(-20px);
-            opacity: 0;
-            transition: transform 0.3s, opacity 0.3s;
-        }
-        
-        .notification.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        .notification.success {
-            background-color: #10b981;
-        }
-        
-        .notification.error {
-            background-color: #ef4444;
-        }
-    `
-  document.head.appendChild(style)
-})
+    jobsContainer.appendChild(jobItem);
+  });
+}
 
-// Simple JavaScript for the manage jobs page
-function confirmDelete(jobId) {
+function formatJobType(jobType) {
+  return jobType.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+function formatStatus(status) {
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+async function confirmDelete(jobId) {
   if (confirm("Are you sure you want to delete this job posting?")) {
-    alert("Job deleted successfully!")
-    // In a real application, you would send a request to your backend here
-    // For now, we'll just hide the element for demonstration
-    const jobItem = event.target.closest(".job-item")
-    if (jobItem) {
-      jobItem.style.display = "none"
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/recruiters/jobs/${jobId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        alert("Job deleted successfully!");
+
+        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+        fetchJobs(userInfo.userId);
+      } else {
+        const data = await response.json();
+        alert(data.message || "Failed to delete job");
+      }
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      alert("An error occurred. Please try again later.");
     }
   }
 }
 
-function searchJobs() {
-  const searchTerm = document.getElementById("searchInput").value.toLowerCase()
-  const jobItems = document.querySelectorAll(".job-item")
+function filterJobs() {
+  const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+  const jobItems = document.querySelectorAll(".job-item");
 
   jobItems.forEach((item) => {
-    const jobTitle = item.querySelector("h3").textContent.toLowerCase()
-    const jobDetails = item.querySelector(".job-details").textContent.toLowerCase()
+    const title = item.getAttribute("data-title");
+    const company = item.getAttribute("data-company");
+    const location = item.getAttribute("data-location");
 
-    if (jobTitle.includes(searchTerm) || jobDetails.includes(searchTerm)) {
-      item.style.display = ""
+    if (
+      title.includes(searchTerm) ||
+      company.includes(searchTerm) ||
+      location.includes(searchTerm)
+    ) {
+      item.style.display = "";
     } else {
-      item.style.display = "none"
+      item.style.display = "none";
     }
-  })
+  });
 }
-

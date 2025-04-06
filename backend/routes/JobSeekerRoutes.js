@@ -5,7 +5,6 @@ const SavedJob = require("../models/SavedJobs");
 
 const router = express.Router();
 
-// Get all active jobs
 router.get("/jobs", async (req, res) => {
   try {
     const jobs = await Job.find({ status: "active" }).populate(
@@ -18,7 +17,6 @@ router.get("/jobs", async (req, res) => {
   }
 });
 
-// Get job details
 router.get("/jobs/:jobId", async (req, res) => {
   try {
     const job = await Job.findById(req.params.jobId).populate(
@@ -36,12 +34,19 @@ router.get("/jobs/:jobId", async (req, res) => {
   }
 });
 
-// Apply for a job
 router.post("/apply", async (req, res) => {
   try {
-    const { jobId, jobSeekerId, recruiterId, resume, coverLetter } = req.body;
+    const {
+      jobId,
+      jobSeekerId,
+      recruiterId,
+      resume,
+      coverLetter,
+      experience,
+      skills,
+      availability,
+    } = req.body;
 
-    // Check if already applied
     const existingApplication = await Application.findOne({
       jobId,
       jobSeekerId,
@@ -59,6 +64,9 @@ router.post("/apply", async (req, res) => {
       recruiterId,
       resume,
       coverLetter,
+      experience,
+      skills,
+      availability,
     });
 
     await newApplication.save();
@@ -72,7 +80,6 @@ router.post("/apply", async (req, res) => {
   }
 });
 
-// Get all applications by a job seeker
 router.get("/applications/:jobSeekerId", async (req, res) => {
   try {
     const applications = await Application.find({
@@ -87,12 +94,10 @@ router.get("/applications/:jobSeekerId", async (req, res) => {
   }
 });
 
-// Save a job
 router.post("/save-job", async (req, res) => {
   try {
     const { jobId, userId } = req.body;
 
-    // Check if already saved
     const existingSavedJob = await SavedJob.findOne({
       jobId,
       userId,
@@ -118,7 +123,6 @@ router.post("/save-job", async (req, res) => {
   }
 });
 
-// Unsave a job
 router.delete("/unsave-job/:jobId/:userId", async (req, res) => {
   try {
     const { jobId, userId } = req.params;
@@ -138,7 +142,6 @@ router.delete("/unsave-job/:jobId/:userId", async (req, res) => {
   }
 });
 
-// Get all saved jobs by a user
 router.get("/saved-jobs/:userId", async (req, res) => {
   try {
     const savedJobs = await SavedJob.find({

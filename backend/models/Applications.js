@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 const applicationSchema = new mongoose.Schema({
   jobId: {
@@ -24,6 +24,18 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  experience: {
+    type: String,
+    required: true,
+  },
+  skills: {
+    type: String,
+    required: true,
+  },
+  availability: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
     enum: ["new", "reviewed", "shortlisted", "rejected"],
@@ -33,8 +45,9 @@ const applicationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-});
+})
 
-const Application = mongoose.model("Application", applicationSchema);
+const Application = mongoose.model("Application", applicationSchema)
 
-module.exports = Application;
+module.exports = Application
+
