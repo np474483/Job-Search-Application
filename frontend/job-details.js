@@ -18,32 +18,32 @@ function setupNavigation() {
   if (!userInfo) {
     // Not logged in
     navLinks.innerHTML = `
-        <li><a href="index.html">Home</a></li>
-        <li><a href="about.html">About</a></li>
-        <li><a href="contact.html">Contact Us</a></li>
-        <li><a href="SignIn.html">Login</a></li>
-        <li><a href="CreateAccount.html">Create Account</a></li>
-      `;
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact Us</a></li>
+      <li><a href="SignIn.html">Login</a></li>
+      <li><a href="CreateAccount.html">Create Account</a></li>
+    `;
   } else if (userInfo.userType === "job_seeker") {
     // Job seeker navigation
     navLinks.innerHTML = `
-        <li><a href="job-seeker-dashboard.html">Dashboard</a></li>
-        <li><a href="js-profile.html">My Profile</a></li>
-        <li><a href="js-job-listing.html">Job Listing</a></li>
-        <li><a href="js-saved-jobs.html">Saved Jobs</a></li>
-        <li><a href="js-applied-jobs.html">Applied Jobs</a></li>
-        <li><a href="index.html" onclick="localStorage.removeItem('userInfo')">Log Out</a></li>
-      `;
+      <li><a href="job-seeker-dashboard.html">Dashboard</a></li>
+      <li><a href="js-my-profile.html">My Profile</a></li>
+      <li><a href="js-job-listing.html">Job Listing</a></li>
+      <li><a href="js-saved-jobs.html">Saved Jobs</a></li>
+      <li><a href="js-applied-jobs.html">Applied Jobs</a></li>
+      <li><a href="index.html" onclick="localStorage.removeItem('userInfo')">Log Out</a></li>
+    `;
   } else if (userInfo.userType === "recruiter") {
     // Recruiter navigation
     navLinks.innerHTML = `
-        <li><a href="recruiter-dashboard.html">Dashboard</a></li>
-        <li><a href="post-job.html">Post Job</a></li>
-        <li><a href="manage-jobs.html">Manage Jobs</a></li>
-        <li><a href="view-applications.html">Applications</a></li>
-        <li><a href="recruiter-profile.html">My Profile</a></li>
-        <li><a href="index.html" onclick="localStorage.removeItem('userInfo')">Log Out</a></li>
-      `;
+      <li><a href="recruiter-dashboard.html">Dashboard</a></li>
+      <li><a href="post-job.html">Post Job</a></li>
+      <li><a href="manage-jobs.html">Manage Jobs</a></li>
+      <li><a href="view-applications.html">Applications</a></li>
+      <li><a href="recruiter-profile.html">My Profile</a></li>
+      <li><a href="index.html" onclick="localStorage.removeItem('userInfo')">Log Out</a></li>
+    `;
   }
 }
 
@@ -94,27 +94,30 @@ function setupActionButtons(job) {
   if (!userInfo) {
     // Not logged in
     actionsContainer.innerHTML = `
-        <a href="SignIn.html" class="action-btn apply-btn">Login to Apply</a>
-      `;
+      <a href="SignIn.html" class="action-btn apply-btn">Login to Apply</a>
+    `;
   } else if (userInfo.userType === "job_seeker") {
     // Job seeker actions
     actionsContainer.innerHTML = `
-        <button class="action-btn apply-btn" onclick="applyForJob('${job._id}')">Apply Now</button>
-        <button class="action-btn save-btn" id="saveJobBtn" onclick="saveJob('${job._id}')">Save Job</button>
-      `;
+      <button class="action-btn apply-btn" onclick="applyForJob('${job._id}', '${job.recruiterId}')">Apply Now</button>
+      <button class="action-btn save-btn" id="saveJobBtn" onclick="saveJob('${job._id}')">Save Job</button>
+    `;
 
     // Check if job is already saved
     checkIfJobIsSaved(job._id);
+
+    // Check if already applied
+    checkIfAlreadyApplied(job._id);
   } else if (
     userInfo.userType === "recruiter" &&
     job.recruiterId === userInfo.userId
   ) {
     // Recruiter actions (only if they own this job)
     actionsContainer.innerHTML = `
-        <a href="post-job.html?edit=${job._id}" class="action-btn edit-btn">Edit Job</a>
-        <button class="action-btn delete-btn" onclick="deleteJob('${job._id}')">Delete Job</button>
-        <a href="view-applications.html?job=${job._id}" class="action-btn apply-btn">View Applications</a>
-      `;
+      <a href="post-job.html?edit=${job._id}" class="action-btn edit-btn">Edit Job</a>
+      <button class="action-btn delete-btn" onclick="deleteJob('${job._id}')">Delete Job</button>
+      <a href="view-applications.html?job=${job._id}" class="action-btn apply-btn">View Applications</a>
+    `;
   }
 }
 
@@ -140,6 +143,33 @@ async function checkIfJobIsSaved(jobId) {
     }
   } catch (error) {
     console.error("Error checking saved job:", error);
+  }
+}
+
+async function checkIfAlreadyApplied(jobId) {
+  const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+  if (!userInfo) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/job-seekers/applications/${userInfo.userId}`
+    );
+    if (!response.ok) return;
+
+    const applications = await response.json();
+    const hasApplied = applications.some(
+      (app) => app.jobId._id === jobId || app.jobId === jobId
+    );
+
+    const applyButton = document.querySelector(".apply-btn");
+    if (hasApplied && applyButton) {
+      applyButton.disabled = true;
+      applyButton.textContent = "Already Applied";
+      applyButton.style.backgroundColor = "#ccc";
+      applyButton.style.cursor = "not-allowed";
+    }
+  } catch (error) {
+    console.error("Error checking application status:", error);
   }
 }
 
@@ -206,10 +236,60 @@ async function saveJob(jobId) {
   }
 }
 
-function applyForJob(jobId) {
-  // Store the job ID in session storage to use on the application page
-  sessionStorage.setItem("applyingForJobId", jobId);
-  window.location.href = "js-job-application.html?job=" + jobId;
+async function applyForJob(jobId, recruiterId) {
+  const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+  if (!userInfo) {
+    alert("Please log in to apply for jobs");
+    window.location.href = "SignIn.html";
+    return;
+  }
+
+  try {
+    // Create a simple application with minimal required data
+    const applicationData = {
+      jobId: jobId,
+      jobSeekerId: userInfo.userId,
+      recruiterId: recruiterId,
+      resume: "resume-" + Date.now() + ".pdf", // Placeholder for resume
+      coverLetter: "I am interested in this position and would like to apply.",
+      experience: "1-3 years", // Default experience
+      skills: "Various skills", // Default skills
+      availability: "Immediate", // Default availability
+      status: "new",
+    };
+
+    const response = await fetch(
+      "http://localhost:3000/api/job-seekers/apply",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(applicationData),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to submit application");
+    }
+
+    // Application submitted successfully
+    alert("Application submitted successfully!");
+
+    // Disable the apply button
+    const applyButton = document.querySelector(".apply-btn");
+    applyButton.disabled = true;
+    applyButton.textContent = "Already Applied";
+    applyButton.style.backgroundColor = "#ccc";
+    applyButton.style.cursor = "not-allowed";
+  } catch (error) {
+    console.error("Error submitting application:", error);
+    alert(
+      error.message ||
+        "An error occurred while submitting your application. Please try again later."
+    );
+  }
 }
 
 async function deleteJob(jobId) {

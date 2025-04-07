@@ -34,6 +34,7 @@ router.get("/jobs/:jobId", async (req, res) => {
   }
 });
 
+// Submit job application
 router.post("/apply", async (req, res) => {
   try {
     const {
@@ -45,8 +46,10 @@ router.post("/apply", async (req, res) => {
       experience,
       skills,
       availability,
+      status,
     } = req.body;
 
+    // Check if already applied
     const existingApplication = await Application.findOne({
       jobId,
       jobSeekerId,
@@ -58,6 +61,7 @@ router.post("/apply", async (req, res) => {
         .json({ message: "You have already applied for this job" });
     }
 
+    // Create new application
     const newApplication = new Application({
       jobId,
       jobSeekerId,
@@ -67,6 +71,7 @@ router.post("/apply", async (req, res) => {
       experience,
       skills,
       availability,
+      status,
     });
 
     await newApplication.save();
@@ -76,7 +81,10 @@ router.post("/apply", async (req, res) => {
       application: newApplication,
     });
   } catch (error) {
-    res.status(400).json({ message: "Error submitting application", error });
+    console.error("Error submitting application:", error);
+    res
+      .status(500)
+      .json({ message: "Error submitting application", error: error.message });
   }
 });
 

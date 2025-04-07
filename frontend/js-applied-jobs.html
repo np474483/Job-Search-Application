@@ -1,87 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Applied Jobs - Job Finder</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="js-applied-jobs.css">
-  <script src="js-applied-jobs.js" defer></script>
-</head>
-<body>
-  <header>
-    <nav class="navbar">
-      <div class="logo">
-        <img src="#" alt="">
-        <span>Job Finder</span>
-      </div>
-      <ul class="nav-links">
-        <li><a href="job-seeker-dashboard.html">Dashboard</a></li>
-        <li><a href="js-profile.html">My Profile</a></li>
-        <li><a href="js-job-listing.html">Job Listing</a></li>
-        <li><a href="js-saved-jobs.html">Saved Jobs</a></li>
-        <li><a href="js-applied-jobs.html" class="active">Applied Jobs</a></li>
-        <li><a href="index.html">Log Out</a></li>
-      </ul>
-    </nav>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Applied Jobs - Job Finder</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="js-applied-jobs.css" />
+    <script src="js-applied-jobs.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="logo">
+          <img src="#" alt="" />
+          <span>Job Finder</span>
+        </div>
+        <ul class="nav-links">
+          <li><a href="job-seeker-dashboard.html">Dashboard</a></li>
+          <li><a href="js-my-profile.html">My Profile</a></li>
+          <li><a href="js-job-listing.html">Job Listing</a></li>
+          <li><a href="js-saved-jobs.html">Saved Jobs</a></li>
+          <li>
+            <a href="js-applied-jobs.html" class="active">Applied Jobs</a>
+          </li>
+          <li>
+            <a href="index.html" onclick="localStorage.removeItem('userInfo')"
+              >Log Out</a
+            >
+          </li>
+        </ul>
+      </nav>
+    </header>
 
-  <main class="container">
-    <h1>Applied Jobs</h1>
-    <p class="page-description">Track the status of your job applications</p>
-    
-    <div class="job-list">
-      <div class="job-card">
-        <h3>Senior Web Developer</h3>
-        <p class="company-name">TechCorp Inc.</p>
-        <p class="job-location">Pune, Maharashtra</p>
-        <p class="job-type">Full-time</p>
-        <p class="applied-date">Applied on: March 15, 2025</p>
-        <div class="status-container">
-          <p class="status-label">Status:</p>
-          <span class="status-badge under-review">Under Review</span>
-        </div>
-        <div class="job-actions">
-          <button class="view-btn" onclick="viewApplication(1)">View Application</button>
+    <main class="container">
+      <h1>Applied Jobs</h1>
+      <p class="page-description">Track the status of your job applications</p>
+
+      <div id="loadingJobs" class="loading-message">
+        Loading applications...
+      </div>
+
+      <div class="job-list" id="jobList">
+        <!-- Applied jobs will be loaded dynamically -->
+      </div>
+
+      <div id="noJobsMessage" class="no-jobs-message" style="display: none">
+        <p>You haven't applied to any jobs yet.</p>
+        <a href="js-job-listing.html" class="browse-btn">Browse Jobs</a>
+      </div>
+
+      <!-- Message Modal -->
+      <div id="messageModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2>Recruiter Message</h2>
+          <div id="messageContent"></div>
         </div>
       </div>
-      
-      <div class="job-card">
-        <h3>UI/UX Designer</h3>
-        <p class="company-name">Creative Solutions</p>
-        <p class="job-location">Mumbai, Maharashtra</p>
-        <p class="job-type">Part-time</p>
-        <p class="applied-date">Applied on: March 10, 2025</p>
-        <div class="status-container">
-          <p class="status-label">Status:</p>
-          <span class="status-badge interview">Interview Scheduled</span>
-        </div>
-        <div class="job-actions">
-          <button class="view-btn" onclick="viewApplication(2)">View Application</button>
-        </div>
-      </div>
-      
-      <div class="job-card">
-        <h3>Marketing Specialist</h3>
-        <p class="company-name">Global Marketing</p>
-        <p class="job-location">Bangalore, Karnataka</p>
-        <p class="job-type">Full-time</p>
-        <p class="applied-date">Applied on: March 5, 2025</p>
-        <div class="status-container">
-          <p class="status-label">Status:</p>
-          <span class="status-badge rejected">Rejected</span>
-        </div>
-        <div class="job-actions">
-          <button class="view-btn" onclick="viewApplication(3)">View Application</button>
-        </div>
-      </div>
-    </div>
-    
-    <div id="noJobsMessage" class="no-jobs-message" style="display: none;">
-      <p>You haven't applied to any jobs yet.</p>
-      <a href="js-job-listing.html" class="browse-btn">Browse Jobs</a>
-    </div>
-  </main>
-</body>
+    </main>
+  </body>
 </html>
-

@@ -5,7 +5,7 @@ const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
@@ -22,12 +22,14 @@ app.get("/", (req, res) => {
 const userRoutes = require("./routes/UserRoutes");
 const recruiterRoutes = require("./routes/RecruiterRoutes");
 const jobSeekerRoutes = require("./routes/JobSeekerRoutes");
+const jobSeekerProfileRoutes = require("./routes/JobSeekerProfileRoutes");
 const adminRoutes = require("./routes/AdminRoutes");
 const jobRoutes = require("./routes/JobRoutes");
 
 app.use("/api/users", userRoutes);
 app.use("/api/recruiters", recruiterRoutes);
 app.use("/api/job-seekers", jobSeekerRoutes);
+app.use("/api/job-seekers", jobSeekerProfileRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/jobs", jobRoutes);
 
