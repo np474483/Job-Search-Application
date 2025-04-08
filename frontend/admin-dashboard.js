@@ -1,4 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Check if admin is logged in
+  const adminInfo = JSON.parse(localStorage.getItem("adminInfo"));
+  if (!adminInfo) {
+    // Instead of redirecting, we'll just show a message and fetch data anyway
+    console.warn(
+      "Admin info not found in localStorage. Some features may be limited."
+    );
+  }
+
   // Fetch dashboard stats
   fetchDashboardStats();
 
@@ -42,18 +51,13 @@ async function fetchRecentUsers() {
       const row = document.createElement("tr");
 
       row.innerHTML = `
-          <td>${user.firstName} ${user.lastName}</td>
-          <td>${user.email}</td>
-          <td>${formatUserType(user.userType)}</td>
-          <td>
-            <a href="admin-edit-user.html?id=${
-              user._id
-            }" class="table-action-btn view-btn">View</a>
-            <button class="table-action-btn delete-btn" onclick="deleteUser('${
-              user._id
-            }')">Delete</button>
-          </td>
-        `;
+        <td>${user.firstName} ${user.lastName}</td>
+        <td>${user.email}</td>
+        <td>${formatUserType(user.userType)}</td>
+        <td>
+          <a href="admin-users.html" class="table-action-btn view-btn">View</a>
+        </td>
+      `;
 
       recentUsersTable.appendChild(row);
     });
@@ -77,21 +81,16 @@ async function fetchRecentJobs() {
       const row = document.createElement("tr");
 
       row.innerHTML = `
-          <td>${job.title}</td>
-          <td>${job.company}</td>
-          <td>${job.location}</td>
-          <td><span class="status-badge status-${job.status}">${formatStatus(
+        <td>${job.title}</td>
+        <td>${job.company}</td>
+        <td>${job.location}</td>
+        <td><span class="status-badge status-${job.status}">${formatStatus(
         job.status
       )}</span></td>
-          <td>
-            <a href="admin-edit-job.html?id=${
-              job._id
-            }" class="table-action-btn view-btn">View</a>
-            <button class="table-action-btn delete-btn" onclick="deleteJob('${
-              job._id
-            }')">Delete</button>
-          </td>
-        `;
+        <td>
+          <a href="admin-jobs.html" class="table-action-btn view-btn">View</a>
+        </td>
+      `;
 
       recentJobsTable.appendChild(row);
     });
@@ -115,66 +114,4 @@ function formatUserType(userType) {
 
 function formatStatus(status) {
   return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-async function deleteUser(userId) {
-  if (
-    confirm(
-      "Are you sure you want to delete this user? This action cannot be undone."
-    )
-  ) {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/admin/users/${userId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (response.ok) {
-        alert("User deleted successfully");
-        // Refresh the user list
-        fetchRecentUsers();
-        // Refresh stats
-        fetchDashboardStats();
-      } else {
-        const data = await response.json();
-        alert(`Error: ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      alert("An error occurred while deleting the user");
-    }
-  }
-}
-
-async function deleteJob(jobId) {
-  if (
-    confirm(
-      "Are you sure you want to delete this job? This action cannot be undone."
-    )
-  ) {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/admin/jobs/${jobId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (response.ok) {
-        alert("Job deleted successfully");
-        // Refresh the job list
-        fetchRecentJobs();
-        // Refresh stats
-        fetchDashboardStats();
-      } else {
-        const data = await response.json();
-        alert(`Error: ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error deleting job:", error);
-      alert("An error occurred while deleting the job");
-    }
-  }
 }

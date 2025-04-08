@@ -6,6 +6,7 @@
     <title>Applied Jobs - Job Finder</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="js-applied-jobs.css" />
+    <link rel="stylesheet" href="modal.css" />
     <script src="js-applied-jobs.js" defer></script>
   </head>
   <body>
@@ -49,12 +50,31 @@
         <a href="js-job-listing.html" class="browse-btn">Browse Jobs</a>
       </div>
 
+      <!-- Resume Modal -->
+      <div id="resumeModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2>Your Resume</h2>
+          <div id="resumeContent">
+            <!-- Resume content will be displayed here -->
+          </div>
+          <div class="modal-actions">
+            <button id="closeResumeBtn" class="cancel-btn">Close</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Message Modal -->
       <div id="messageModal" class="modal">
         <div class="modal-content">
           <span class="close">&times;</span>
           <h2>Recruiter Message</h2>
-          <div id="messageContent"></div>
+          <div id="messageContent">
+            <!-- Message content will be displayed here -->
+          </div>
+          <div class="modal-actions">
+            <button id="closeMessageBtn" class="cancel-btn">Close</button>
+          </div>
         </div>
       </div>
     </main>

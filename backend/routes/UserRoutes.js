@@ -37,6 +37,14 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
+    // Check if account is active
+    if (user.isActive === false) {
+      return res.status(403).json({
+        message:
+          "Your account has been deactivated due to suspicious activity. Please contact support for assistance.",
+      });
+    }
+
     res.status(200).json({
       message: "Login successful",
       userType: user.userType,

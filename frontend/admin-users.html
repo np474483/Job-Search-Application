@@ -6,6 +6,7 @@
     <title>Manage Users - Job Finder Admin</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="admin-dashboard.css" />
+    <link rel="stylesheet" href="modal.css" />
     <script src="admin-users.js" defer></script>
   </head>
   <body>
@@ -19,7 +20,11 @@
           <li><a href="admin-dashboard.html">Dashboard</a></li>
           <li><a href="admin-users.html" class="active">Manage Users</a></li>
           <li><a href="admin-jobs.html">Manage Jobs</a></li>
-          <li><a href="index.html">Log Out</a></li>
+          <li>
+            <a href="index.html" onclick="localStorage.removeItem('adminInfo')"
+              >Log Out</a
+            >
+          </li>
         </ul>
       </nav>
     </header>
@@ -56,6 +61,7 @@
                 <th>Email</th>
                 <th>Phone</th>
                 <th>User Type</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -66,5 +72,22 @@
         </div>
       </div>
     </main>
+
+    <!-- User Profile Modal -->
+    <div id="userProfileModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>User Profile</h2>
+        <div id="userProfileContent">
+          <!-- User profile data will be loaded here -->
+        </div>
+        <div class="modal-actions">
+          <button id="deactivateUserBtn" class="delete-btn">
+            Deactivate Account
+          </button>
+          <button id="closeModalBtn" class="cancel-btn">Close</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

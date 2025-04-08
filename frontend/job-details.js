@@ -237,26 +237,47 @@ async function saveJob(jobId) {
 }
 
 async function applyForJob(jobId, recruiterId) {
+  console.log('Starting application process...');
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
   if (!userInfo) {
+    console.error('No user info found in localStorage');
     alert("Please log in to apply for jobs");
     window.location.href = "SignIn.html";
     return;
   }
 
   try {
-    // Create a simple application with minimal required data
+    console.log('Fetching user profile...');
+    const profileResponse = await fetch(
+      `http://localhost:3000/api/job-seekers/profile/${userInfo.userId}`
+    );
+    let profile = {};
+
+    if (profileResponse.ok) {
+      profile = await profileResponse.json();
+      console.log('User profile fetched:', profile);
+    } else {
+      console.error('Profile fetch failed:', profileResponse.status, profileResponse.statusText);
+    }
+
+    // Ensure recruiterId is properly formatted
+    console.log('Original recruiterId:', recruiterId);
+    const recruiterIdStr = typeof recruiterId === 'object' ? recruiterId._id : recruiterId;
+    console.log('Formatted recruiterId:', recruiterIdStr);
+
     const applicationData = {
       jobId: jobId,
       jobSeekerId: userInfo.userId,
-      recruiterId: recruiterId,
-      resume: "resume-" + Date.now() + ".pdf", // Placeholder for resume
+      recruiterId: recruiterIdStr,
+      resume: profile.resumeName || "resume-" + Date.now() + ".pdf",
       coverLetter: "I am interested in this position and would like to apply.",
-      experience: "1-3 years", // Default experience
-      skills: "Various skills", // Default skills
-      availability: "Immediate", // Default availability
+      experience: profile.experience || "1-3 years",
+      skills: profile.skills || "Various skills",
+      availability: "Immediate",
       status: "new",
     };
+
+    console.log('Preparing application data:', applicationData);
 
     const response = await fetch(
       "http://localhost:3000/api/job-seekers/apply",
@@ -269,25 +290,34 @@ async function applyForJob(jobId, recruiterId) {
       }
     );
 
+    console.log('Application response:', response);
+
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to submit application");
+      console.error('Application failed:', errorData);
+      throw new Error(errorData.message || `Failed to submit application. Status: ${response.status}`);
     }
 
-    // Application submitted successfully
+    const result = await response.json();
+    console.log('Application successful:', result);
+
     alert("Application submitted successfully!");
 
-    // Disable the apply button
     const applyButton = document.querySelector(".apply-btn");
-    applyButton.disabled = true;
-    applyButton.textContent = "Already Applied";
-    applyButton.style.backgroundColor = "#ccc";
-    applyButton.style.cursor = "not-allowed";
+    if (applyButton) {
+      applyButton.disabled = true;
+      applyButton.textContent = "Already Applied";
+      applyButton.style.backgroundColor = "#ccc";
+      applyButton.style.cursor = "not-allowed";
+    }
   } catch (error) {
-    console.error("Error submitting application:", error);
+    console.error("Detailed application error:", {
+      error: error,
+      message: error.message,
+      stack: error.stack
+    });
     alert(
-      error.message ||
-        "An error occurred while submitting your application. Please try again later."
+      `Application Error: ${error.message}\n\nPlease check console for details.`
     );
   }
 }

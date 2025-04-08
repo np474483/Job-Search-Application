@@ -84,6 +84,30 @@ router.put("/users/:userId", async (req, res) => {
   }
 });
 
+// Update user status (activate/deactivate)
+router.put("/users/:userId/status", async (req, res) => {
+  try {
+    const { isActive } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.userId,
+      { isActive },
+      { new: true, select: "-password" }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: `User ${isActive ? "activated" : "deactivated"} successfully`,
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(400).json({ message: "Error updating user status", error });
+  }
+});
+
 // Delete user
 router.delete("/users/:userId", async (req, res) => {
   try {
@@ -171,6 +195,30 @@ router.put("/jobs/:jobId/status", async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ message: "Error updating job status", error });
+  }
+});
+
+// Flag/unflag job
+router.put("/jobs/:jobId/flag", async (req, res) => {
+  try {
+    const { isFlagged } = req.body;
+
+    const updatedJob = await Job.findByIdAndUpdate(
+      req.params.jobId,
+      { isFlagged },
+      { new: true }
+    );
+
+    if (!updatedJob) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    res.status(200).json({
+      message: `Job ${isFlagged ? "flagged" : "unflagged"} successfully`,
+      job: updatedJob,
+    });
+  } catch (error) {
+    res.status(400).json({ message: "Error updating job flag status", error });
   }
 });
 

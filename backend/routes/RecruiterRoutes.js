@@ -174,9 +174,9 @@ router.delete("/jobs/:jobId", async (req, res) => {
 // Get all applications for a specific job
 router.get("/applications/job/:jobId", async (req, res) => {
   try {
-    const applications = await Application.find({
-      jobId: req.params.jobId,
-    }).populate("jobSeekerId", "firstName lastName email phone");
+    const applications = await Application.find({ jobId: req.params.jobId })
+      .populate("jobSeekerId", "firstName lastName email phone")
+      .sort({ appliedDate: -1 });
 
     res.status(200).json(applications);
   } catch (error) {
@@ -191,7 +191,8 @@ router.get("/applications/:recruiterId", async (req, res) => {
       recruiterId: req.params.recruiterId,
     })
       .populate("jobId", "title company")
-      .populate("jobSeekerId", "firstName lastName email phone");
+      .populate("jobSeekerId", "firstName lastName email phone")
+      .sort({ appliedDate: -1 });
 
     res.status(200).json(applications);
   } catch (error) {
@@ -226,6 +227,37 @@ router.put("/applications/:applicationId", async (req, res) => {
     res
       .status(400)
       .json({ message: "Error updating application status", error });
+  }
+});
+
+// Add feedback to an application
+router.post("/applications/:applicationId/feedback", async (req, res) => {
+  try {
+    const { feedback } = req.body;
+
+    if (!feedback) {
+      return res.status(400).json({ message: "Feedback is required" });
+    }
+
+    const updatedApplication = await Application.findByIdAndUpdate(
+      req.params.applicationId,
+      {
+        feedback,
+        status: "reviewed", // Automatically update status to reviewed when feedback is provided
+      },
+      { new: true }
+    );
+
+    if (!updatedApplication) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    res.status(200).json({
+      message: "Feedback added successfully",
+      application: updatedApplication,
+    });
+  } catch (error) {
+    res.status(400).json({ message: "Error adding feedback", error });
   }
 });
 

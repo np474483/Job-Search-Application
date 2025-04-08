@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ["job_seeker", "recruiter", "admin"],
   },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const User = mongoose.model("UserRegistration", userSchema);

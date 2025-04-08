@@ -1,31 +1,90 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Check if user is logged in
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
   if (!userInfo || userInfo.userType !== "recruiter") {
     window.location.href = "SignIn.html";
     return;
   }
 
+  // Set up modals
+  setupModals();
+
+  // Get job ID from URL if present
   const urlParams = new URLSearchParams(window.location.search);
   const jobId = urlParams.get("job");
 
   if (jobId) {
+    // Fetch applications for specific job
     fetchApplicationsForJob(jobId);
   } else {
+    // Fetch all applications for this recruiter
     fetchAllApplications(userInfo.userId);
   }
-
-  const jobFilter = document.getElementById("jobFilter");
-  const statusFilter = document.getElementById("statusFilter");
-
-  if (jobFilter) jobFilter.addEventListener("change", filterApplications);
-  if (statusFilter) statusFilter.addEventListener("change", filterApplications);
 });
+
+function setupModals() {
+  // Resume Modal
+  const resumeModal = document.getElementById("resumeModal");
+  const resumeCloseBtn = resumeModal.querySelector(".close");
+  const closeResumeBtn = document.getElementById("closeResumeBtn");
+
+  resumeCloseBtn.onclick = () => {
+    resumeModal.style.display = "none";
+  };
+
+  closeResumeBtn.onclick = () => {
+    resumeModal.style.display = "none";
+  };
+
+  // Feedback Modal
+  const feedbackModal = document.getElementById("feedbackModal");
+  const feedbackCloseBtn = feedbackModal.querySelector(".close");
+  const closeFeedbackBtn = document.getElementById("closeFeedbackBtn");
+  const feedbackForm = document.getElementById("feedbackForm");
+
+  feedbackCloseBtn.onclick = () => {
+    feedbackModal.style.display = "none";
+  };
+
+  closeFeedbackBtn.onclick = () => {
+    feedbackModal.style.display = "none";
+  };
+
+  feedbackForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const feedback = document.getElementById("feedbackMessage").value;
+    const applicationId = feedbackForm.getAttribute("data-application-id");
+
+    if (feedback.trim() === "") {
+      alert("Please enter feedback before submitting.");
+      return;
+    }
+
+    sendFeedback(applicationId, feedback);
+  });
+
+  // Close modals when clicking outside
+  window.onclick = (event) => {
+    if (event.target === resumeModal) {
+      resumeModal.style.display = "none";
+    }
+    if (event.target === feedbackModal) {
+      feedbackModal.style.display = "none";
+    }
+  };
+}
 
 async function fetchApplicationsForJob(jobId) {
   try {
-    const jobResponse = await fetch(
-      `http://localhost:3000/api/recruiters/jobs/${jobId}`
-    );
+    // Show loading message
+    const loadingElement = document.getElementById("loadingApplications");
+    loadingElement.style.display = "block";
+
+    // Hide applications container
+    document.getElementById("applicationsContainer").style.display = "none";
+
+    // Fetch job details to display job title
+    const jobResponse = await fetch(`http://localhost:3000/api/jobs/${jobId}`);
 
     if (!jobResponse.ok) {
       throw new Error("Failed to fetch job details");
@@ -33,25 +92,30 @@ async function fetchApplicationsForJob(jobId) {
 
     const job = await jobResponse.json();
 
-    const pageTitle = document.querySelector("h1");
-    if (pageTitle) {
-      pageTitle.textContent = `Applications for ${job.title}`;
-    }
+    // Update page title
+    document.querySelector("h1").textContent = `Applications for: ${job.title}`;
 
+    // Fetch applications for this job
     const applicationsResponse = await fetch(
       `http://localhost:3000/api/recruiters/applications/job/${jobId}`
     );
+
+    // Hide loading message
+    loadingElement.style.display = "none";
 
     if (!applicationsResponse.ok) {
       throw new Error("Failed to fetch applications");
     }
 
     const applications = await applicationsResponse.json();
+
+    // Display applications
     displayApplications(applications, job);
   } catch (error) {
     console.error("Error fetching applications:", error);
-    document.querySelector(".applications-container").innerHTML = `
-      <div style="text-align: center; padding: 20px;">
+    document.getElementById("loadingApplications").style.display = "none";
+    document.getElementById("applicationsContainer").innerHTML = `
+      <div class="error-message">
         <p>Failed to load applications. Please try again later.</p>
       </div>
     `;
@@ -60,9 +124,20 @@ async function fetchApplicationsForJob(jobId) {
 
 async function fetchAllApplications(recruiterId) {
   try {
+    // Show loading message
+    const loadingElement = document.getElementById("loadingApplications");
+    loadingElement.style.display = "block";
+
+    // Hide applications container
+    document.getElementById("applicationsContainer").style.display = "none";
+
+    // Fetch all applications for this recruiter
     const response = await fetch(
       `http://localhost:3000/api/recruiters/applications/${recruiterId}`
     );
+
+    // Hide loading message
+    loadingElement.style.display = "none";
 
     if (!response.ok) {
       throw new Error("Failed to fetch applications");
@@ -70,6 +145,7 @@ async function fetchAllApplications(recruiterId) {
 
     const applications = await response.json();
 
+    // Fetch all jobs posted by this recruiter for the filter dropdown
     const jobsResponse = await fetch(
       `http://localhost:3000/api/recruiters/jobs/${recruiterId}`
     );
@@ -80,13 +156,16 @@ async function fetchAllApplications(recruiterId) {
 
     const jobs = await jobsResponse.json();
 
+    // Populate job filter dropdown
     populateJobFilter(jobs);
 
+    // Display applications
     displayApplications(applications);
   } catch (error) {
     console.error("Error fetching applications:", error);
-    document.querySelector(".applications-container").innerHTML = `
-      <div style="text-align: center; padding: 20px;">
+    document.getElementById("loadingApplications").style.display = "none";
+    document.getElementById("applicationsContainer").innerHTML = `
+      <div class="error-message">
         <p>Failed to load applications. Please try again later.</p>
       </div>
     `;
@@ -96,12 +175,12 @@ async function fetchAllApplications(recruiterId) {
 function populateJobFilter(jobs) {
   const jobFilter = document.getElementById("jobFilter");
 
-  if (!jobFilter) return;
-
+  // Clear existing options except "All Jobs"
   while (jobFilter.options.length > 1) {
     jobFilter.remove(1);
   }
 
+  // Add job options to filter
   jobs.forEach((job) => {
     const option = document.createElement("option");
     option.value = job._id;
@@ -110,40 +189,39 @@ function populateJobFilter(jobs) {
   });
 }
 
-function displayApplications(applications, job = null) {
-  const container = document.querySelector(".applications-container");
+function displayApplications(applications, specificJob = null) {
+  const container = document.getElementById("applicationsContainer");
+  container.innerHTML = "";
+  container.style.display = "block";
 
   if (applications.length === 0) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 20px;">
-        <p>No applications found${job ? ` for ${job.title}` : ""}.</p>
-      </div>
-    `;
+    document.getElementById("noApplicationsMessage").style.display = "block";
     return;
   }
 
-  container.innerHTML = "";
+  document.getElementById("noApplicationsMessage").style.display = "none";
 
   applications.forEach((application) => {
-    const appliedDate = new Date(application.appliedDate).toLocaleDateString();
+    // Get job details
+    const job =
+      specificJob ||
+      (application.jobId && typeof application.jobId === "object"
+        ? application.jobId
+        : { title: "Unknown Job" });
 
-    const jobTitle = job
-      ? job.title
-      : application.jobId
-      ? application.jobId.title
-      : "Unknown Job";
-
+    // Get applicant details
     const applicant = application.jobSeekerId || {};
     const applicantName =
       `${applicant.firstName || ""} ${applicant.lastName || ""}`.trim() ||
       "Unknown Applicant";
 
+    // Format date
+    const appliedDate = new Date(application.appliedDate).toLocaleDateString();
+
+    // Create application card
     const card = document.createElement("div");
     card.className = "application-card";
-    card.setAttribute(
-      "data-job",
-      job ? job._id : application.jobId ? application.jobId._id : ""
-    );
+    card.setAttribute("data-job", job._id || "");
     card.setAttribute("data-status", application.status);
 
     card.innerHTML = `
@@ -153,26 +231,35 @@ function displayApplications(applications, job = null) {
         <p class="applicant-phone">${applicant.phone || "No phone provided"}</p>
       </div>
       <div class="application-details">
-        <p class="job-applied">Applied for: <strong>${jobTitle}</strong></p>
+        <p class="job-applied">Applied for: <strong>${job.title}</strong></p>
         <p class="application-date">Applied on: ${appliedDate}</p>
-        <p class="application-status">Status: <span class="status ${
+        <p class="application-status">Status: <span class="status-badge ${
           application.status
         }">${formatStatus(application.status)}</span></p>
       </div>
       <div class="application-actions">
         <button class="action-btn view" onclick="viewResume('${
           application._id
-        }')">View Resume</button>
-        <button class="action-btn shortlist" onclick="updateStatus('${
+        }', '${
+      application.jobSeekerId._id || application.jobSeekerId
+    }')">View Resume</button>
+        <button class="action-btn feedback" onclick="provideFeedback('${
           application._id
-        }', 'shortlisted', this)" ${
+        }')">Send Feedback</button>
+        <div class="status-actions">
+          <button class="action-btn shortlist" onclick="updateStatus('${
+            application._id
+          }', 'shortlisted', this)" ${
       application.status === "shortlisted" ? "disabled" : ""
     }>Shortlist</button>
-        <button class="action-btn reject" onclick="updateStatus('${
-          application._id
-        }', 'rejected', this)" ${
+          <button class="action-btn reject" onclick="updateStatus('${
+            application._id
+          }', 'rejected', this)" ${
+      application.status === "rejected" ? "disabled" : ""
+    }>Reject</button>  'rejected', this)" ${
       application.status === "rejected" ? "disabled" : ""
     }>Reject</button>
+        </div>
       </div>
     `;
 
@@ -180,37 +267,170 @@ function displayApplications(applications, job = null) {
   });
 }
 
-function formatStatus(status) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
+async function viewResume(applicationId, jobSeekerId) {
+  try {
+    // Show resume modal
+    const resumeModal = document.getElementById("resumeModal");
+    const resumeContent = document.getElementById("resumeContent");
 
-function filterApplications() {
-  const jobFilter = document.getElementById("jobFilter");
-  const statusFilter = document.getElementById("statusFilter");
+    // Show loading message
+    resumeContent.innerHTML = `<p>Loading resume...</p>`;
+    resumeModal.style.display = "block";
 
-  const jobValue = jobFilter ? jobFilter.value : "all";
-  const statusValue = statusFilter ? statusFilter.value : "all";
+    // Fetch job seeker profile
+    const response = await fetch(
+      `http://localhost:3000/api/job-seekers/profile/${jobSeekerId}`
+    );
 
-  const cards = document.querySelectorAll(".application-card");
-
-  cards.forEach((card) => {
-    const jobMatch =
-      jobValue === "all" || card.getAttribute("data-job") === jobValue;
-    const statusMatch =
-      statusValue === "all" || card.getAttribute("data-status") === statusValue;
-
-    if (jobMatch && statusMatch) {
-      card.style.display = "";
-    } else {
-      card.style.display = "none";
+    if (!response.ok) {
+      throw new Error("Failed to fetch applicant profile");
     }
-  });
+
+    const profile = await response.json();
+
+    // Fetch education information
+    const educationResponse = await fetch(
+      `http://localhost:3000/api/job-seekers/education/${jobSeekerId}`
+    );
+    let education = [];
+
+    if (educationResponse.ok) {
+      education = await educationResponse.json();
+    }
+
+    // Fetch experience information
+    const experienceResponse = await fetch(
+      `http://localhost:3000/api/job-seekers/experience/${jobSeekerId}`
+    );
+    let experience = [];
+
+    if (experienceResponse.ok) {
+      experience = await experienceResponse.json();
+    }
+
+    // Display resume
+    resumeContent.innerHTML = `
+      <div class="resume-preview">
+        <div class="resume-header">
+          <h3>${profile.firstName} ${profile.lastName}</h3>
+          <p>${profile.email}</p>
+          <p>${profile.phone}</p>
+          <p>${profile.location || "Location not specified"}</p>
+        </div>
+        
+        <div class="resume-section">
+          <h4>Professional Summary</h4>
+          <p>${profile.bio || "No professional summary provided."}</p>
+        </div>
+        
+        <div class="resume-section">
+          <h4>Skills</h4>
+          <p>${profile.skills || "No skills listed."}</p>
+        </div>
+        
+        <div class="resume-section">
+          <h4>Experience</h4>
+          ${
+            experience.length > 0
+              ? experience
+                  .map(
+                    (exp) => `
+              <div class="experience-item">
+                <p><strong>${exp.position}</strong> at ${exp.company}</p>
+                <p>${exp.startDate} - ${
+                      exp.currentJob ? "Present" : exp.endDate
+                    }</p>
+                <p>${exp.description}</p>
+              </div>
+            `
+                  )
+                  .join("")
+              : "<p>No experience listed.</p>"
+          }
+        </div>
+        
+        <div class="resume-section">
+          <h4>Education</h4>
+          ${
+            education.length > 0
+              ? education
+                  .map(
+                    (edu) => `
+              <div class="education-item">
+                <p><strong>${edu.degree}</strong> from ${edu.institution}</p>
+                <p>${edu.startYear} - ${edu.endYear}</p>
+              </div>
+            `
+                  )
+                  .join("")
+              : "<p>No education listed.</p>"
+          }
+        </div>
+        
+        ${
+          profile.resumeName
+            ? `<div class="resume-section">
+            <h4>Attached Resume</h4>
+            <p><strong>File:</strong> ${profile.resumeName}</p>
+            <p><strong>Uploaded on:</strong> ${new Date(
+              profile.resumeDate
+            ).toLocaleDateString()}</p>
+          </div>`
+            : ""
+        }
+      </div>
+    `;
+  } catch (error) {
+    console.error("Error fetching resume:", error);
+    document.getElementById("resumeContent").innerHTML = `
+      <div class="error-message">
+        <p>Failed to load resume. Please try again later.</p>
+      </div>
+    `;
+  }
 }
 
-function viewResume(applicationId) {
-  alert(
-    "Viewing resume... (In a real application, this would open the applicant's resume file)"
-  );
+function provideFeedback(applicationId) {
+  // Show feedback modal
+  const feedbackModal = document.getElementById("feedbackModal");
+  const feedbackForm = document.getElementById("feedbackForm");
+
+  // Clear previous feedback
+  document.getElementById("feedbackMessage").value = "";
+
+  // Set application ID as data attribute
+  feedbackForm.setAttribute("data-application-id", applicationId);
+
+  // Show modal
+  feedbackModal.style.display = "block";
+}
+
+async function sendFeedback(applicationId, feedback) {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/api/recruiters/applications/${applicationId}/feedback`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ feedback }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to send feedback");
+    }
+
+    // Hide feedback modal
+    document.getElementById("feedbackModal").style.display = "none";
+
+    // Show success message
+    alert("Feedback sent successfully!");
+  } catch (error) {
+    console.error("Error sending feedback:", error);
+    alert("Failed to send feedback. Please try again later.");
+  }
 }
 
 async function updateStatus(applicationId, status, button) {
@@ -230,29 +450,66 @@ async function updateStatus(applicationId, status, button) {
       throw new Error("Failed to update status");
     }
 
+    // Update UI
     const card = button.closest(".application-card");
-    const statusSpan = card.querySelector(".status");
+    const statusSpan = card.querySelector(".status-badge");
 
-    statusSpan.className = `status ${status}`;
+    // Update status badge
+    statusSpan.className = `status-badge ${status}`;
     statusSpan.textContent = formatStatus(status);
 
+    // Update data attribute
     card.setAttribute("data-status", status);
 
-    const buttons = card.querySelectorAll(".action-btn");
-    buttons.forEach((btn) => {
-      if (btn.classList.contains(status)) {
-        btn.disabled = true;
-      } else if (
-        btn.classList.contains("shortlist") ||
-        btn.classList.contains("reject")
-      ) {
-        btn.disabled = false;
-      }
-    });
+    // Update buttons
+    const shortlistBtn = card.querySelector(".shortlist");
+    const rejectBtn = card.querySelector(".reject");
 
+    shortlistBtn.disabled = status === "shortlisted";
+    rejectBtn.disabled = status === "rejected";
+
+    // Show success message
     alert(`Application status updated to ${formatStatus(status)}`);
   } catch (error) {
     console.error("Error updating status:", error);
-    alert("Failed to update application status");
+    alert("Failed to update application status. Please try again later.");
   }
+}
+
+function filterApplications() {
+  const jobFilter = document.getElementById("jobFilter").value;
+  const statusFilter = document.getElementById("statusFilter").value;
+
+  const cards = document.querySelectorAll(".application-card");
+  let visibleCount = 0;
+
+  cards.forEach((card) => {
+    const jobMatch =
+      jobFilter === "all" || card.getAttribute("data-job") === jobFilter;
+    const statusMatch =
+      statusFilter === "all" ||
+      card.getAttribute("data-status") === statusFilter;
+
+    if (jobMatch && statusMatch) {
+      card.style.display = "";
+      visibleCount++;
+    } else {
+      card.style.display = "none";
+    }
+  });
+
+  // Show/hide no applications message
+  document.getElementById("noApplicationsMessage").style.display =
+    visibleCount === 0 ? "block" : "none";
+}
+
+function formatStatus(status) {
+  const statusMap = {
+    new: "New",
+    reviewed: "Reviewed",
+    shortlisted: "Shortlisted",
+    rejected: "Rejected",
+  };
+
+  return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
 }

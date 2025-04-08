@@ -50,6 +50,10 @@ const jobSchema = new mongoose.Schema({
     enum: ["active", "expired", "closed"],
     default: "active",
   },
+  isFlagged: {
+    type: Boolean,
+    default: false,
+  },
   postedDate: {
     type: Date,
     default: Date.now,

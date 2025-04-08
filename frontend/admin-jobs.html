@@ -6,6 +6,7 @@
     <title>Manage Jobs - Job Finder Admin</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="admin-dashboard.css" />
+    <link rel="stylesheet" href="modal.css" />
     <script src="admin-jobs.js" defer></script>
   </head>
   <body>
@@ -19,7 +20,11 @@
           <li><a href="admin-dashboard.html">Dashboard</a></li>
           <li><a href="admin-users.html">Manage Users</a></li>
           <li><a href="admin-jobs.html" class="active">Manage Jobs</a></li>
-          <li><a href="index.html">Log Out</a></li>
+          <li>
+            <a href="index.html" onclick="localStorage.removeItem('adminInfo')"
+              >Log Out</a
+            >
+          </li>
         </ul>
       </nav>
     </header>
@@ -79,5 +84,23 @@
         </div>
       </div>
     </main>
+
+    <!-- Job Details Modal -->
+    <div id="jobDetailsModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Job Details</h2>
+        <div id="jobDetailsContent">
+          <!-- Job details will be loaded here -->
+        </div>
+        <div class="modal-actions">
+          <button id="flagJobBtn" class="warning-btn">
+            Flag as Inappropriate
+          </button>
+          <button id="deleteJobBtn" class="delete-btn">Delete Job</button>
+          <button id="closeModalBtn" class="cancel-btn">Close</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
