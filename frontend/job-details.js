@@ -237,47 +237,70 @@ async function saveJob(jobId) {
 }
 
 async function applyForJob(jobId, recruiterId) {
-  console.log('Starting application process...');
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
   if (!userInfo) {
-    console.error('No user info found in localStorage');
     alert("Please log in to apply for jobs");
     window.location.href = "SignIn.html";
     return;
   }
 
   try {
-    console.log('Fetching user profile...');
+    // First, check if the job seeker has completed their profile
     const profileResponse = await fetch(
       `http://localhost:3000/api/job-seekers/profile/${userInfo.userId}`
     );
-    let profile = {};
 
-    if (profileResponse.ok) {
-      profile = await profileResponse.json();
-      console.log('User profile fetched:', profile);
-    } else {
-      console.error('Profile fetch failed:', profileResponse.status, profileResponse.statusText);
+    if (!profileResponse.ok) {
+      // Profile doesn't exist or error fetching profile
+      alert(
+        "You need to complete your profile before applying for jobs. Please go to 'My Profile' and fill in your details."
+      );
+      window.location.href = "js-my-profile.html";
+      return;
     }
 
-    // Ensure recruiterId is properly formatted
-    console.log('Original recruiterId:', recruiterId);
-    const recruiterIdStr = typeof recruiterId === 'object' ? recruiterId._id : recruiterId;
-    console.log('Formatted recruiterId:', recruiterIdStr);
+    const profile = await profileResponse.json();
 
+    // Check if essential profile fields are filled
+    if (
+      !profile.firstName ||
+      !profile.lastName ||
+      !profile.email ||
+      !profile.phone ||
+      !profile.location ||
+      !profile.skills
+    ) {
+      alert(
+        "Please complete your profile before applying for jobs. Make sure to fill in your personal information and skills."
+      );
+      window.location.href = "js-my-profile.html";
+      return;
+    }
+
+    // Fetch job details to get the correct recruiterId
+    const jobResponse = await fetch(`http://localhost:3000/api/jobs/${jobId}`);
+    if (!jobResponse.ok) {
+      throw new Error("Failed to fetch job details");
+    }
+
+    const jobDetails = await jobResponse.json();
+    const recruiterIdValue =
+      jobDetails.recruiterId._id || jobDetails.recruiterId;
+
+    // Create application with user profile data
     const applicationData = {
       jobId: jobId,
       jobSeekerId: userInfo.userId,
-      recruiterId: recruiterIdStr,
-      resume: profile.resumeName || "resume-" + Date.now() + ".pdf",
+      recruiterId: recruiterIdValue, // Use the correct recruiterId value
+      resume: profile.resumeName || "resume-" + Date.now() + ".pdf", // Use profile resume or placeholder
       coverLetter: "I am interested in this position and would like to apply.",
-      experience: profile.experience || "1-3 years",
-      skills: profile.skills || "Various skills",
-      availability: "Immediate",
+      experience: profile.experience || "1-3 years", // Use profile experience or default
+      skills: profile.skills || "Various skills", // Use profile skills or default
+      availability: "Immediate", // Default availability
       status: "new",
     };
 
-    console.log('Preparing application data:', applicationData);
+    console.log("Sending application data:", applicationData);
 
     const response = await fetch(
       "http://localhost:3000/api/job-seekers/apply",
@@ -290,34 +313,25 @@ async function applyForJob(jobId, recruiterId) {
       }
     );
 
-    console.log('Application response:', response);
-
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Application failed:', errorData);
-      throw new Error(errorData.message || `Failed to submit application. Status: ${response.status}`);
+      throw new Error(errorData.message || "Failed to submit application");
     }
 
-    const result = await response.json();
-    console.log('Application successful:', result);
-
+    // Application submitted successfully
     alert("Application submitted successfully!");
 
+    // Disable the apply button
     const applyButton = document.querySelector(".apply-btn");
-    if (applyButton) {
-      applyButton.disabled = true;
-      applyButton.textContent = "Already Applied";
-      applyButton.style.backgroundColor = "#ccc";
-      applyButton.style.cursor = "not-allowed";
-    }
+    applyButton.disabled = true;
+    applyButton.textContent = "Already Applied";
+    applyButton.style.backgroundColor = "#ccc";
+    applyButton.style.cursor = "not-allowed";
   } catch (error) {
-    console.error("Detailed application error:", {
-      error: error,
-      message: error.message,
-      stack: error.stack
-    });
+    console.error("Error submitting application:", error);
     alert(
-      `Application Error: ${error.message}\n\nPlease check console for details.`
+      error.message ||
+        "An error occurred while submitting your application. Please try again later."
     );
   }
 }

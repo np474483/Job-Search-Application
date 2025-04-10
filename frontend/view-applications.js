@@ -20,6 +20,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // Fetch all applications for this recruiter
     fetchAllApplications(userInfo.userId);
   }
+
+  // Set up filter event listeners
+  const jobFilter = document.getElementById("jobFilter");
+  const statusFilter = document.getElementById("statusFilter");
+
+  if (jobFilter) jobFilter.addEventListener("change", filterApplications);
+  if (statusFilter) statusFilter.addEventListener("change", filterApplications);
 });
 
 function setupModals() {
@@ -224,11 +231,24 @@ function displayApplications(applications, specificJob = null) {
     card.setAttribute("data-job", job._id || "");
     card.setAttribute("data-status", application.status);
 
+    // Get applicant ID
+    const applicantId = applicant._id || applicant;
+
     card.innerHTML = `
       <div class="applicant-info">
-        <h3>${applicantName}</h3>
-        <p class="applicant-email">${applicant.email || "No email provided"}</p>
-        <p class="applicant-phone">${applicant.phone || "No phone provided"}</p>
+        <div class="applicant-header">
+         
+
+          <div class="applicant-details">
+            <h3>${applicantName}</h3>
+            <p class="applicant-email">${
+              applicant.email || "No email provided"
+            }</p>
+            <p class="applicant-phone">${
+              applicant.phone || "No phone provided"
+            }</p>
+          </div>
+        </div>
       </div>
       <div class="application-details">
         <p class="job-applied">Applied for: <strong>${job.title}</strong></p>
@@ -240,9 +260,7 @@ function displayApplications(applications, specificJob = null) {
       <div class="application-actions">
         <button class="action-btn view" onclick="viewResume('${
           application._id
-        }', '${
-      application.jobSeekerId._id || application.jobSeekerId
-    }')">View Resume</button>
+        }', '${applicantId}')">View Resume</button>
         <button class="action-btn feedback" onclick="provideFeedback('${
           application._id
         }')">Send Feedback</button>
@@ -255,8 +273,6 @@ function displayApplications(applications, specificJob = null) {
           <button class="action-btn reject" onclick="updateStatus('${
             application._id
           }', 'rejected', this)" ${
-      application.status === "rejected" ? "disabled" : ""
-    }>Reject</button>  'rejected', this)" ${
       application.status === "rejected" ? "disabled" : ""
     }>Reject</button>
         </div>
@@ -277,9 +293,13 @@ async function viewResume(applicationId, jobSeekerId) {
     resumeContent.innerHTML = `<p>Loading resume...</p>`;
     resumeModal.style.display = "block";
 
+    // Extract the ID if jobSeekerId is an object
+    const seekerId =
+      typeof jobSeekerId === "object" ? jobSeekerId._id : jobSeekerId;
+
     // Fetch job seeker profile
     const response = await fetch(
-      `http://localhost:3000/api/job-seekers/profile/${jobSeekerId}`
+      `http://localhost:3000/api/job-seekers/profile/${seekerId}`
     );
 
     if (!response.ok) {
@@ -290,7 +310,7 @@ async function viewResume(applicationId, jobSeekerId) {
 
     // Fetch education information
     const educationResponse = await fetch(
-      `http://localhost:3000/api/job-seekers/education/${jobSeekerId}`
+      `http://localhost:3000/api/job-seekers/education/${seekerId}`
     );
     let education = [];
 
@@ -300,7 +320,7 @@ async function viewResume(applicationId, jobSeekerId) {
 
     // Fetch experience information
     const experienceResponse = await fetch(
-      `http://localhost:3000/api/job-seekers/experience/${jobSeekerId}`
+      `http://localhost:3000/api/job-seekers/experience/${seekerId}`
     );
     let experience = [];
 
@@ -312,10 +332,18 @@ async function viewResume(applicationId, jobSeekerId) {
     resumeContent.innerHTML = `
       <div class="resume-preview">
         <div class="resume-header">
-          <h3>${profile.firstName} ${profile.lastName}</h3>
-          <p>${profile.email}</p>
-          <p>${profile.phone}</p>
-          <p>${profile.location || "Location not specified"}</p>
+          <div class="resume-profile-image">
+            <img src="${
+              profile.profileImage || "/placeholder.svg?height=100&width=100"
+            }" alt="${profile.firstName} ${profile.lastName}" 
+                 onerror="this.src='/placeholder.svg?height=100&width=100'">
+          </div>
+          <div class="resume-profile-info">
+            <h3>${profile.firstName} ${profile.lastName}</h3>
+            <p>${profile.email}</p>
+            <p>${profile.phone}</p>
+            <p>${profile.location || "Location not specified"}</p>
+          </div>
         </div>
         
         <div class="resume-section">
@@ -337,8 +365,8 @@ async function viewResume(applicationId, jobSeekerId) {
                     (exp) => `
               <div class="experience-item">
                 <p><strong>${exp.position}</strong> at ${exp.company}</p>
-                <p>${exp.startDate} - ${
-                      exp.currentJob ? "Present" : exp.endDate
+                <p>${formatDate(exp.startDate)} - ${
+                      exp.currentJob ? "Present" : formatDate(exp.endDate)
                     }</p>
                 <p>${exp.description}</p>
               </div>
@@ -512,4 +540,12 @@ function formatStatus(status) {
   };
 
   return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const month = date.toLocaleString("default", { month: "short" });
+  const year = date.getFullYear();
+  return `${month} ${year}`;
 }

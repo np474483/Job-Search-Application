@@ -171,16 +171,20 @@ router.delete("/jobs/:jobId", async (req, res) => {
   }
 });
 
-// Get all applications for a specific job
+// Get applications for a specific job
 router.get("/applications/job/:jobId", async (req, res) => {
   try {
     const applications = await Application.find({ jobId: req.params.jobId })
+      .populate("jobId", "title company location jobType")
       .populate("jobSeekerId", "firstName lastName email phone")
-      .sort({ appliedDate: -1 });
+      .populate("recruiterId", "firstName lastName");
 
     res.status(200).json(applications);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching applications", error });
+    console.error("Error fetching job applications:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching applications", error: error.message });
   }
 });
 
@@ -190,28 +194,30 @@ router.get("/applications/:recruiterId", async (req, res) => {
     const applications = await Application.find({
       recruiterId: req.params.recruiterId,
     })
-      .populate("jobId", "title company")
-      .populate("jobSeekerId", "firstName lastName email phone")
-      .sort({ appliedDate: -1 });
+      .populate("jobId", "title company location jobType")
+      .populate("jobSeekerId", "firstName lastName email phone");
 
     res.status(200).json(applications);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching applications", error });
+    console.error("Error fetching recruiter applications:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching applications", error: error.message });
   }
 });
 
 // Update application status
 router.put("/applications/:applicationId", async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, feedback } = req.body;
 
-    if (!["new", "reviewed", "shortlisted", "rejected"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
+    const updateData = {};
+    if (status) updateData.status = status;
+    if (feedback) updateData.feedback = feedback;
 
     const updatedApplication = await Application.findByIdAndUpdate(
       req.params.applicationId,
-      { status },
+      updateData,
       { new: true }
     );
 
@@ -219,14 +225,12 @@ router.put("/applications/:applicationId", async (req, res) => {
       return res.status(404).json({ message: "Application not found" });
     }
 
-    res.status(200).json({
-      message: "Application status updated successfully",
-      application: updatedApplication,
-    });
+    res.status(200).json(updatedApplication);
   } catch (error) {
+    console.error("Error updating application:", error);
     res
-      .status(400)
-      .json({ message: "Error updating application status", error });
+      .status(500)
+      .json({ message: "Error updating application", error: error.message });
   }
 });
 
@@ -235,16 +239,9 @@ router.post("/applications/:applicationId/feedback", async (req, res) => {
   try {
     const { feedback } = req.body;
 
-    if (!feedback) {
-      return res.status(400).json({ message: "Feedback is required" });
-    }
-
     const updatedApplication = await Application.findByIdAndUpdate(
       req.params.applicationId,
-      {
-        feedback,
-        status: "reviewed", // Automatically update status to reviewed when feedback is provided
-      },
+      { feedback },
       { new: true }
     );
 
@@ -252,12 +249,12 @@ router.post("/applications/:applicationId/feedback", async (req, res) => {
       return res.status(404).json({ message: "Application not found" });
     }
 
-    res.status(200).json({
-      message: "Feedback added successfully",
-      application: updatedApplication,
-    });
+    res.status(200).json(updatedApplication);
   } catch (error) {
-    res.status(400).json({ message: "Error adding feedback", error });
+    console.error("Error adding feedback:", error);
+    res
+      .status(500)
+      .json({ message: "Error adding feedback", error: error.message });
   }
 });
 
